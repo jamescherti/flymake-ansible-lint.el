@@ -23,9 +23,7 @@ To install the `flymake-ansible-lint` using `straight.el`:
              :repo "jamescherti/flymake-ansible-lint.el")
   :commands flymake-ansible-lint-setup
   :hook (((yaml-ts-mode yaml-mode) . flymake-ansible-lint-setup)
-         ((yaml-ts-mode yaml-mode) . flymake-mode))
-  :custom
-  (flymake-ansible-lint-max-line-length 80))
+         ((yaml-ts-mode yaml-mode) . flymake-mode)))
 ```
 
 ## License
