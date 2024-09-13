@@ -58,30 +58,34 @@ directories listed in the $PATH environment variable."
                "--nocolor"
                "--parseable"
                ,source-path)
-  ;; Example:
-  ;; file.yaml:1: internal-error: Unexpected error code 1
-  :search-regexp (rx bol
-                     (one-or-more (not ":")) ":" ; File name
-                     (group (one-or-more digit)) ":" ; Line number
-                     (one-or-more space)
-                     (group (one-or-more (not ":")))  ":" ; Code
-                     (one-or-more space)
-                     (group (one-or-more any))
-                     eol)
+  :search-regexp
+  (rx bol
+      ;; file.yaml:57:7: syntax-check[specific]: message
+      ;; file.yaml:1: internal-error: Unexpected error code 1
+      (seq (one-or-more (not ":")) ":" ; File name
+           ;; Line/Column
+           (group (one-or-more digit)) ":" ; Line number
+           (optional (group (one-or-more digit) ":")) ; Optional column
+           ;; Code
+           (one-or-more space)
+           (group (one-or-more (not ":")))  ":" ; Code
+           ;; Message
+           (one-or-more space)
+           (group (one-or-more any))) ; Msg
+      eol)
+
   :prep-diagnostic
   (let* ((lnum (string-to-number (match-string 1)))
-         (code (match-string 2))
-         (text (match-string 3))
-         ;; TODO remove 0 or change it to nil
-         (pos (flymake-diag-region fmqd-source lnum 0))
+         (col (let ((col-string (match-string 2)))
+                (if col-string
+                    (string-to-number col-string)
+                  nil)))
+         (code (match-string 3))
+         (text (match-string 4))
+         (pos (flymake-diag-region fmqd-source lnum col))
          (beg (car pos))
          (end (cdr pos))
-         (type
-          :error
-          ;; (cond
-          ;;  ((string= code "NAME") :error)
-          ;;  (t :warning))
-          )
+         (type :error)
          (msg (format "%s: %s" code text)))
     (list fmqd-source beg end type msg)))
 
