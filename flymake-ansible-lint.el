@@ -38,6 +38,12 @@
           :tag "Github"
           "https://github.com/jamescherti/flymake-ansible-lint.el"))
 
+(defvar flymake-ansible-lint--tmp-file nil
+  "Internal flymake-ansible-lint variable.")
+
+(defvar flymake-ansible-lint--source-path nil
+  "Internal flymake-ansible-lint variable.")
+
 (defcustom flymake-ansible-lint-executable "ansible-lint"
   "Path to the ansible-lint executable.
 If not specified with a full path (e.g., ansible-lint), the
@@ -46,18 +52,22 @@ directories listed in the $PATH environment variable."
   :type 'string
   :group 'flymake-ansible-lint)
 
-(flymake-quickdef-backend flymake-ansible-lint-backend
-  :pre-let ((ansible-lint-exec
-             (executable-find flymake-ansible-lint-executable))
-            (source-path (buffer-file-name fmqd-source)))
-  :pre-check (unless ansible-lint-exec
-               (error "The '%s' executable was not found" ansible-lint-exec))
+(flymake-quickdef-backend flymake-ansible--lint-backend
+  :pre-let ((ansible-lint-exec (executable-find
+                                flymake-ansible-lint-executable))
+            (buffer-path flymake-ansible-lint--source-path)
+            (tmp-path flymake-ansible-lint--tmp-file)
+            (file-path (or tmp-path buffer-path)))
+  :pre-check
+  (unless ansible-lint-exec
+    (error "The '%s' executable was not found" ansible-lint-exec))
+
   :write-type nil
   :proc-form `(,ansible-lint-exec
                "--offline"
                "--nocolor"
                "--parseable"
-               ,source-path)
+               ,file-path)
   :search-regexp
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
@@ -75,19 +85,55 @@ directories listed in the $PATH environment variable."
       eol)
 
   :prep-diagnostic
-  (let* ((lnum (string-to-number (match-string 1)))
-         (col (let ((col-string (match-string 2)))
-                (if col-string
-                    (string-to-number col-string)
-                  nil)))
-         (code (match-string 3))
-         (text (match-string 4))
-         (pos (flymake-diag-region fmqd-source lnum col))
-         (beg (car pos))
-         (end (cdr pos))
-         (type :error)
-         (msg (format "%s: %s" code text)))
-    (list fmqd-source beg end type msg)))
+  (progn
+    (when (and tmp-path (not (string= buffer-path tmp-path)))
+      (delete-file tmp-path nil))
+
+    (let* ((lnum (string-to-number (match-string 1)))
+           (col (let ((col-string (match-string 2)))
+                  (if col-string
+                      (string-to-number col-string)
+                    nil)))
+           (code (match-string 3))
+           (text (match-string 4))
+           (pos (flymake-diag-region fmqd-source lnum col))
+           (beg (car pos))
+           (end (cdr pos))
+           (type :error)
+           (msg (format "%s: %s" code text)))
+
+      (list fmqd-source beg end type msg))))
+
+(defun flymake-ansible-lint--create-temp-file-same-dir (file-path)
+  "Create a temporary file in the same directory as FILE-PATH.
+Returns the path of the created temporary file."
+  (when file-path
+    (let* ((directory (file-name-directory file-path))
+           (filename (file-name-nondirectory file-path)))
+      (expand-file-name (concat "flymake_" filename) directory))))
+
+(defun flymake-ansible-lint-backend (report-fn &rest args)
+  "Backend function for Flymake to handle Ansible linting.
+
+REPORT-FN is a callback function to report diagnostics.
+ARGS are additional arguments to pass to the linting function."
+  (let* ((source-path (buffer-file-name (buffer-base-buffer)))
+         (tmp-file (flymake-ansible-lint--create-temp-file-same-dir
+                    source-path))
+         (buffer-modified-p (buffer-modified-p)))
+    (when (and source-path tmp-file)
+      ;; Copy the file and call the lint backend
+      (if buffer-modified-p
+          (progn
+            (copy-file source-path tmp-file t)
+            (let ((flymake-ansible-lint--tmp-file tmp-file)
+                  (flymake-ansible-lint--source-path
+                   (expand-file-name source-path)))
+              (apply 'flymake-ansible--lint-backend report-fn args)))
+        (let ((flymake-ansible-lint--tmp-file nil)
+              (flymake-ansible-lint--source-path
+               (expand-file-name source-path)))
+          (apply 'flymake-ansible--lint-backend report-fn args))))))
 
 ;;;###autoload
 (defun flymake-ansible-lint-setup ()
