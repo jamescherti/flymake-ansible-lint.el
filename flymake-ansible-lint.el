@@ -44,6 +44,16 @@
 (defvar flymake-ansible-lint--source-path nil
   "Internal flymake-ansible-lint variable.")
 
+(defvar flymake-ansible-lint-args nil
+  "List of additional command-line arguments for the ansible-lint tool.
+
+This variable holds a list of command-line arguments that will be passed to the
+ansible-lint command. You can customize this list to include any extra options
+you need.
+
+Example:
+  (setq flymake-ansible-lint-args (list \"--project-dir\" \"/path/to/dir\"))")
+
 (defcustom flymake-ansible-lint-executable "ansible-lint"
   "Path to the ansible-lint executable.
 If not specified with a full path (e.g., ansible-lint), the
@@ -63,11 +73,13 @@ directories listed in the $PATH environment variable."
     (error "The '%s' executable was not found" ansible-lint-exec))
 
   :write-type nil
-  :proc-form `(,ansible-lint-exec
-               "--offline"
-               "--nocolor"
-               "--parseable"
-               ,file-path)
+  :proc-form (append (list ansible-lint-exec
+                           "--nocolor"
+                           "--parseable")
+                     (if flymake-ansible-lint-args
+                         (append flymake-ansible-lint-args
+                                 (list file-path))
+                       (list file-path)))
   :search-regexp
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
