@@ -44,15 +44,53 @@
 (defvar flymake-ansible-lint--source-path nil
   "Internal flymake-ansible-lint variable.")
 
-(defvar flymake-ansible-lint-args nil
-  "List of additional command-line arguments for the ansible-lint tool.
+(defcustom flymake-ansible-lint-args nil
+  "List of additional command-line arguments for the `ansible-lint` tool.
 
-This variable holds a list of command-line arguments that will be passed to the
-ansible-lint command. You can customize this list to include any extra options
-you need.
+This variable specifies a list of command-line arguments to pass to the
+`ansible-lint` command. You can customize this list to include any extra options
+or settings you need for `ansible-lint`.
 
-Example:
-  (setq flymake-ansible-lint-args (list \"--project-dir\" \"/path/to/dir\"))")
+Example usage:
+  (setq flymake-ansible-lint-args (list \"--project-dir\" \"/path/to/dir\"))
+
+Useful `ansible-lint` command-line arguments:
+  --offline
+  Disable installation of requirements.yml and schema refreshing.
+
+  -c CONFIG_FILE, --config-file CONFIG_FILE
+  Specify the configuration file to use. By default, `ansible-lint` looks for
+  `.ansible-lint` or `.config/ansible-lint.yml`.
+
+  --project-dir PROJECT_DIR
+  Define the location of the project/repository. `ansible-lint` will autodetect
+  based on the configuration file's location.
+
+  -x SKIP_LIST, --skip-list SKIP_LIST
+  Only check rules whose IDs/tags do not match these values (e.g.,
+  `--skip-list=name,run-once`).
+
+  -w WARN_LIST, --warn-list
+  Only warn about rules in this list, unless overridden in the config file.
+  The current version defaults to: `experimental`, `jinja[spacing]`.
+
+  -r RULESDIR, --rules-dir RULESDIR
+  Specify custom rule directories. Use `-R` to retain embedded rules from
+  /usr/lib/python3/dist-packages/ansiblelint/rules
+
+  -R
+  Retain default rules when using `-r`.
+
+  --profile {min,basic,moderate,safety,shared,production}
+  Specify which rules profile to be used.
+
+  -t TAGS, --tags TAGS
+  Only check rules whose IDs/tags match these values.
+
+  --enable-list ENABLE_LIST
+  Activate optional rules based on their tag names."
+  :type '(list string)
+  :group 'flymake-ansible-lint)
 
 (defcustom flymake-ansible-lint-executable "ansible-lint"
   "Path to the ansible-lint executable.
