@@ -100,7 +100,7 @@ directories listed in the $PATH environment variable."
   :type 'string
   :group 'flymake-ansible-lint)
 
-(flymake-quickdef-backend flymake-ansible--lint-backend
+(flymake-quickdef-backend flymake-ansible--core-lint-backend
   :pre-let ((ansible-lint-exec (executable-find
                                 flymake-ansible-lint-executable))
             (buffer-path flymake-ansible-lint--source-path)
@@ -179,11 +179,11 @@ ARGS are additional arguments to pass to the linting function."
             (let ((flymake-ansible-lint--tmp-file tmp-file)
                   (flymake-ansible-lint--source-path
                    (expand-file-name source-path)))
-              (apply 'flymake-ansible--lint-backend report-fn args)))
+              (apply 'flymake-ansible--core-lint-backend report-fn args)))
         (let ((flymake-ansible-lint--tmp-file nil)
               (flymake-ansible-lint--source-path
                (expand-file-name source-path)))
-          (apply 'flymake-ansible--lint-backend report-fn args))))))
+          (apply 'flymake-ansible--core-lint-backend report-fn args))))))
 
 ;;;###autoload
 (defun flymake-ansible-lint-setup ()
