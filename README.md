@@ -26,6 +26,15 @@ To install the `flymake-ansible-lint` using `straight.el`:
          ((yaml-ts-mode yaml-mode) . flymake-mode)))
 ```
 
+## customize
+
+You can configure `ansible-lint` parameters using the `flymake-ansible-lint-args` variable:
+
+```emacs-lisp
+(setq flymake-ansible-lint-args '("--offline"
+                                  "-x" "run-once[play],no-free-form"))
+```
+
 ## License
 
 The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
