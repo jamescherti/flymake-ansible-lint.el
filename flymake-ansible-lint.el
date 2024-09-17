@@ -38,12 +38,6 @@
           :tag "Github"
           "https://github.com/jamescherti/flymake-ansible-lint.el"))
 
-(defvar flymake-ansible-lint--tmp-file nil
-  "Internal flymake-ansible-lint variable.")
-
-(defvar flymake-ansible-lint--source-path nil
-  "Internal flymake-ansible-lint variable.")
-
 (defcustom flymake-ansible-lint-args nil
   "List of additional command-line arguments for the `ansible-lint` tool.
 
@@ -99,6 +93,12 @@ If not specified with a full path (e.g., ansible-lint), the
 directories listed in the $PATH environment variable."
   :type 'string
   :group 'flymake-ansible-lint)
+
+(defvar flymake-ansible-lint--tmp-file nil
+  "Internal flymake-ansible-lint variable.")
+
+(defvar flymake-ansible-lint--source-path nil
+  "Internal flymake-ansible-lint variable.")
 
 (flymake-quickdef-backend flymake-ansible--core-lint-backend
   :pre-let ((ansible-lint-exec (executable-find
