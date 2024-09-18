@@ -122,7 +122,8 @@ directories listed in the $PATH environment variable."
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
       ;; file.yaml:1: internal-error: Unexpected error code 1
-      (seq (one-or-more (not ":")) ":" ; File name
+      (seq (zero-or-more any)
+           (literal (file-name-nondirectory file-path)) ":" ; File name
            ;; Line/Column
            (group (one-or-more digit)) ":" ; Line number
            (optional (group (one-or-more digit) ":")) ; Optional column
