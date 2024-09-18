@@ -171,10 +171,11 @@ ARGS are additional arguments to pass to the linting function."
   (let* ((source-path (buffer-file-name (buffer-base-buffer)))
          (tmp-file (flymake-ansible-lint--create-temp-file-same-dir
                     source-path))
+         (create-temp-file nil)  ; Disabled for now
          (buffer-modified-p (buffer-modified-p)))
     (when (and source-path tmp-file)
       ;; Copy the file and call the lint backend
-      (if buffer-modified-p
+      (if (and create-temp-file buffer-modified-p)
           (progn
             (copy-file source-path tmp-file t)
             (let ((flymake-ansible-lint--tmp-file tmp-file)
