@@ -6,7 +6,7 @@
 ;; Version: 0.9.9
 ;; URL: https://github.com/jamescherti/flymake-ansible-lint.el
 ;; Keywords: tools
-;; Package-Requires: ((flymake-quickdef "1.0.0") (emacs "26.1"))
+;; Package-Requires: ((emacs "26.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -28,7 +28,6 @@
 ;;; Code:
 
 (require 'flymake)
-(require 'flymake-quickdef)
 
 (defgroup flymake-ansible-lint nil
   "Non-nil if flymake-ansible-lint mode mode is enabled."
@@ -94,13 +93,157 @@ directories listed in the $PATH environment variable."
   :type 'string
   :group 'flymake-ansible-lint)
 
+(defvar flymake-ansible-lint-tmp-files-prefix "flymake_"
+  "Prefix used for temporary files created by Flymake Ansible.
+This prefix is used to identify temporary files created by Flymake Ansible
+in the same directory as the original file being linted with ansible-lint.")
+
+(defvar flymake-ansible-lint-tmp-files-enabled t
+  "Control whether Flymake Ansible Lint creates a temporary file.
+When non-nil, `flymake-ansible-lint' will create a temporary file in the same
+directory as the original file, allowing for syntax checking to occur even when
+`flymake-no-changes-timeout' is active and the file has not been saved.
+Default value is t, enabling temporary file creation.")
+
 (defvar flymake-ansible-lint--tmp-file nil
   "Internal flymake-ansible-lint variable.")
 
 (defvar flymake-ansible-lint--source-path nil
   "Internal flymake-ansible-lint variable.")
 
-(flymake-quickdef-backend flymake-ansible--core-lint-backend
+(defvar-local flymake-ansible-lint--quickdef-procs nil
+  "Internal variable used by `flymake-ansible-lint--quickdef-backend'.
+Do not edit its value.  This variable holds a plist used to store
+handles to running processes for Flymake backends.  Entries are
+keyed by the symbol name of the appropriate backend function and
+values are running processes.")
+
+(defmacro flymake-ansible-lint--quickdef-backend (name &optional docstring &rest defs)
+  "Custom version of quickdef that supports cleanup.
+Quickly define a backend for use with Flymake. This macro produces a new
+function, NAME, which is suitable for use with the variable
+`flymake-diagnostic-functions'. If a string DOCSTRING is provided, it will be
+the documentation for the function. The body of the function is generated based
+on values provided to the macro in DEFS, described below."
+  (declare (indent defun) (doc-string 2))
+  ;; Do some initial sanity checks on the provided arguments
+  ;; Ex: If there isn't a docstring, join the first argument into def-plist
+  (unless lexical-binding
+    (error "Need lexical-binding for flymake-quickdef-backend (%s)" name))
+  (let* ((def-docstring (when (stringp docstring) docstring))
+         (def-plist (if (stringp docstring) defs (cons docstring defs)))
+         (write-type (or (eval (plist-get def-plist :write-type)) 'pipe))
+         (temp-dir-symb (make-symbol "fmqd-temp-dir"))
+         (fmqd-err-symb (make-symbol "fmqd-err"))
+         (diags-symb (make-symbol "diags"))
+         (cleanup-form (when (eq write-type 'file)
+                         (list (list 'delete-directory temp-dir-symb t))))
+         (custom-cleanup
+          (let ((custom-cleanup-value (plist-get def-plist :cleanup)))
+            (when custom-cleanup-value
+              custom-cleanup-value))))
+    (dolist (elem '(:proc-form :search-regexp :prep-diagnostic))
+      (unless (plist-get def-plist elem)
+        (error "Missing flymake backend definition `%s'" elem)))
+    (unless (memq write-type '(file pipe nil))
+      (error "Invalid `:write-type' value `%s'" (plist-get def-plist :write-type)))
+    ;; Start of actual generated function definition
+    `(defun ,name (report-fn &rest _args)
+       ,def-docstring
+       (let* ((fmqd-source (current-buffer))
+              ;; If storing to a file, create the temporary directory
+              ,@(when (eq write-type 'file)
+                  `((,temp-dir-symb (make-temp-file "flymake-" t))
+                    (fmqd-temp-file
+                     (concat
+                      (file-name-as-directory ,temp-dir-symb)
+                      (file-name-nondirectory (or (buffer-file-name) (buffer-name)))))))
+              ;; Next we do the :pre-let phase
+              ,@(plist-get def-plist :pre-let))
+         ;; With vars defined, do :pre-check
+         (condition-case ,fmqd-err-symb
+             (progn
+               ,(plist-get def-plist :pre-check))
+           (error ,@cleanup-form
+                  ,custom-cleanup
+                  (signal (car ,fmqd-err-symb) (cdr ,fmqd-err-symb))))
+         ;; No errors so far, kill any running (obsolete) running processes
+         (let ((proc (plist-get flymake-quickdef--procs ',name)))
+           (when (process-live-p proc)
+             (kill-process proc)))
+         (save-restriction
+           (widen)
+           ;; If writing to a file, send the data to the temp file
+           ,@(when (eq write-type 'file)
+               '((write-region nil nil fmqd-temp-file nil 'silent)))
+           ;; Launch the new external process
+           (setq flymake-quickdef--procs
+                 (plist-put flymake-quickdef--procs ',name
+                            (make-process
+                             :name ,(concat (symbol-name name) "-flymake")
+                             :noquery t
+                             :connection-type 'pipe
+                             :buffer (generate-new-buffer ,(concat " *" (symbol-name name) "-flymake*"))
+                             :command ,(plist-get def-plist :proc-form)
+                             :sentinel
+                             (lambda (proc _event)
+                               ;; If the process is actually done we can continue
+                               (unless (process-live-p proc)
+                                 (unwind-protect
+                                     (if (eq proc (plist-get (buffer-local-value 'flymake-quickdef--procs fmqd-source) ',name))
+                                         ;; If case: this is the current process
+                                         ;; Widen the code buffer so we can compute line numbers, etc.
+                                         (with-current-buffer fmqd-source
+                                           (save-restriction
+                                             (widen)
+                                             ;; Scan the process output for errors
+                                             (with-current-buffer (process-buffer proc)
+                                               (goto-char (point-min))
+                                               (save-match-data
+                                                 (let ((,diags-symb nil))
+                                                   (while (search-forward-regexp
+                                                           ,(plist-get def-plist :search-regexp)
+                                                           nil t)
+                                                     ;; Save match data to work around a bug in `flymake-diag-region'
+                                                     ;; That function seems to alter match data and is commonly called here
+                                                     (save-match-data
+                                                       (save-excursion
+                                                         (let* ((diag-vals ,(plist-get def-plist :prep-diagnostic))
+                                                                (diag-beg (nth 1 diag-vals))
+                                                                (diag-end (nth 2 diag-vals))
+                                                                (diag-type (nth 3 diag-vals)))
+                                                           ;; Remove diagnostics with invalid values
+                                                           ;; for either beg or end. This guards against
+                                                           ;; overlay errors inside Flymake. Log such
+                                                           ;; errors with Flymake.
+                                                           (if (and (integer-or-marker-p diag-beg)
+                                                                    (integer-or-marker-p diag-end))
+                                                               ;; Skip any diagnostics with a type of nil
+                                                               ;; This makes it easier to filter some out
+                                                               (when diag-type
+                                                                 (push (apply #'flymake-make-diagnostic diag-vals) ,diags-symb))
+                                                             (with-current-buffer fmqd-source
+                                                               (flymake-log :error "Got invalid buffer position %s or %s in %s"
+                                                                            diag-beg diag-end proc)))))))
+                                                   (funcall report-fn (nreverse ,diags-symb)))))))
+                                       ;; Else case: this process is obsolete
+                                       (flymake-log :warning "Canceling obsolete check %s" proc))
+                                   ;; Unwind-protect cleanup forms
+                                   ,@cleanup-form
+                                   ,custom-cleanup
+                                   (kill-buffer (process-buffer proc))))))))
+           ;; If piping, send data to process
+           ,@(when (eq write-type 'pipe)
+               `((let ((proc (plist-get flymake-quickdef--procs ',name)))
+                   (process-send-region proc (point-min) (point-max))
+                   (process-send-eof proc)))))))))
+
+(flymake-ansible-lint--quickdef-backend
+  flymake-ansible--core-lint-backend
+  :cleanup
+  (progn
+    (when (and tmp-path (not (string= buffer-path tmp-path)))
+      (delete-file tmp-path nil)))
   :pre-let ((ansible-lint-exec (executable-find
                                 flymake-ansible-lint-executable))
             (buffer-path flymake-ansible-lint--source-path)
@@ -137,9 +280,6 @@ directories listed in the $PATH environment variable."
 
   :prep-diagnostic
   (progn
-    (when (and tmp-path (not (string= buffer-path tmp-path)))
-      (delete-file tmp-path nil))
-
     (let* ((lnum (string-to-number (match-string 1)))
            (col (let ((col-string (match-string 2)))
                   (if col-string
@@ -160,8 +300,22 @@ directories listed in the $PATH environment variable."
 Returns the path of the created temporary file."
   (when file-path
     (let* ((directory (file-name-directory file-path))
-           (filename (file-name-nondirectory file-path)))
-      (expand-file-name (concat "flymake_" filename) directory))))
+           (filename (file-name-nondirectory file-path))
+           (basename (file-name-sans-extension filename))
+           (extension (file-name-extension filename))
+           (counter 0)
+           (temp-file-name))
+      (while (progn
+               (setq temp-file-name (concat
+                                     flymake-ansible-lint-tmp-files-prefix
+                                     (if (> counter 0)
+                                         (format "%d_" counter))
+                                     basename
+                                     "."
+                                     extension))
+               (file-exists-p (expand-file-name temp-file-name directory)))
+        (setq counter (1+ counter)))
+      (expand-file-name temp-file-name directory))))
 
 (defun flymake-ansible-lint-backend (report-fn &rest args)
   "Backend function for Flymake to handle Ansible linting.
@@ -169,19 +323,20 @@ Returns the path of the created temporary file."
 REPORT-FN is a callback function to report diagnostics.
 ARGS are additional arguments to pass to the linting function."
   (let* ((source-path (buffer-file-name (buffer-base-buffer)))
-         (tmp-file (flymake-ansible-lint--create-temp-file-same-dir
-                    source-path))
-         (create-temp-file nil)  ; Disabled for now
-         (buffer-modified-p (buffer-modified-p)))
-    (when (and source-path tmp-file)
+         (buffer-modified-p (current-buffer)))
+    (when source-path
       ;; Copy the file and call the lint backend
-      (if (and create-temp-file buffer-modified-p)
+      (if (and flymake-ansible-lint-tmp-files-enable
+               buffer-modified-p)
           (progn
-            (copy-file source-path tmp-file t)
-            (let ((flymake-ansible-lint--tmp-file tmp-file)
-                  (flymake-ansible-lint--source-path
-                   (expand-file-name source-path)))
-              (apply 'flymake-ansible--core-lint-backend report-fn args)))
+            (let ((tmp-file (flymake-ansible-lint--create-temp-file-same-dir
+                             source-path)))
+              (when tmp-file
+                (write-region (point-min) (point-max) tmp-file nil 'quiet)
+                (let ((flymake-ansible-lint--tmp-file tmp-file)
+                      (flymake-ansible-lint--source-path (expand-file-name
+                                                          source-path)))
+                  (apply 'flymake-ansible--core-lint-backend report-fn args)))))
         (let ((flymake-ansible-lint--tmp-file nil)
               (flymake-ansible-lint--source-path
                (expand-file-name source-path)))
