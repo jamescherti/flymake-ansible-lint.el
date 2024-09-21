@@ -168,7 +168,7 @@ on values provided to the macro in DEFS, described below."
                   ,custom-cleanup
                   (signal (car ,fmqd-err-symb) (cdr ,fmqd-err-symb))))
          ;; No errors so far, kill any running (obsolete) running processes
-         (let ((proc (plist-get flymake-quickdef--procs ',name)))
+         (let ((proc (plist-get flymake-ansible-lint--quickdef-procs ',name)))
            (when (process-live-p proc)
              (kill-process proc)))
          (save-restriction
@@ -177,8 +177,8 @@ on values provided to the macro in DEFS, described below."
            ,@(when (eq write-type 'file)
                '((write-region nil nil fmqd-temp-file nil 'silent)))
            ;; Launch the new external process
-           (setq flymake-quickdef--procs
-                 (plist-put flymake-quickdef--procs ',name
+           (setq flymake-ansible-lint--quickdef-procs
+                 (plist-put flymake-ansible-lint--quickdef-procs ',name
                             (make-process
                              :name ,(concat (symbol-name name) "-flymake")
                              :noquery t
@@ -190,7 +190,7 @@ on values provided to the macro in DEFS, described below."
                                ;; If the process is actually done we can continue
                                (unless (process-live-p proc)
                                  (unwind-protect
-                                     (if (eq proc (plist-get (buffer-local-value 'flymake-quickdef--procs fmqd-source) ',name))
+                                     (if (eq proc (plist-get (buffer-local-value 'flymake-ansible-lint--quickdef-procs fmqd-source) ',name))
                                          ;; If case: this is the current process
                                          ;; Widen the code buffer so we can compute line numbers, etc.
                                          (with-current-buffer fmqd-source
@@ -234,7 +234,7 @@ on values provided to the macro in DEFS, described below."
                                    (kill-buffer (process-buffer proc))))))))
            ;; If piping, send data to process
            ,@(when (eq write-type 'pipe)
-               `((let ((proc (plist-get flymake-quickdef--procs ',name)))
+               `((let ((proc (plist-get flymake-ansible-lint--quickdef-procs ',name)))
                    (process-send-region proc (point-min) (point-max))
                    (process-send-eof proc)))))))))
 
@@ -326,7 +326,7 @@ ARGS are additional arguments to pass to the linting function."
          (buffer-modified-p (current-buffer)))
     (when source-path
       ;; Copy the file and call the lint backend
-      (if (and flymake-ansible-lint-tmp-files-enable
+      (if (and flymake-ansible-lint-tmp-files-enabled
                buffer-modified-p)
           (progn
             (let ((tmp-file (flymake-ansible-lint--create-temp-file-same-dir
