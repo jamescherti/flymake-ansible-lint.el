@@ -37,7 +37,7 @@ You can configure `ansible-lint` parameters using the `flymake-ansible-lint-args
 
 ## License
 
-The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
+The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version. This package uses flymake-quickdef, by Karl Otness.
 
 Copyright (C) 2024 James Cherti
 

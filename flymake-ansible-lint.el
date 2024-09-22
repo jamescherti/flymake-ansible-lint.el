@@ -105,12 +105,6 @@ directory as the original file, allowing for syntax checking to occur even when
 `flymake-no-changes-timeout' is active and the file has not been saved.
 Default value is t, enabling temporary file creation.")
 
-(defvar flymake-ansible-lint--tmp-file nil
-  "Internal flymake-ansible-lint variable.")
-
-(defvar flymake-ansible-lint--source-path nil
-  "Internal flymake-ansible-lint variable.")
-
 (defvar-local flymake-ansible-lint--quickdef-procs nil
   "Internal variable used by `flymake-ansible-lint--quickdef-backend'.
 Do not edit its value.  This variable holds a plist used to store
@@ -238,17 +232,53 @@ on values provided to the macro in DEFS, described below."
                    (process-send-region proc (point-min) (point-max))
                    (process-send-eof proc)))))))))
 
-(flymake-ansible-lint--quickdef-backend
-  flymake-ansible--core-lint-backend
+(defun flymake-ansible-lint--create-temp-file-same-dir (file-path)
+  "Create a temporary file in the same directory as FILE-PATH.
+Write the contents of the current buffer to the temporary file.
+Returns the path of the newly created temporary file."
+  (when file-path
+    (let* ((file-path (expand-file-name file-path))
+           (directory (file-name-directory file-path))
+           (filename (file-name-nondirectory file-path))
+           (basename (file-name-sans-extension filename))
+           (extension (file-name-extension filename))
+           (counter 0)
+           (temp-file-path))
+      (while (progn
+               (setq temp-file-path
+                     (expand-file-name (concat
+                                        flymake-ansible-lint-tmp-files-prefix
+                                        (if (> counter 0)
+                                            (format "%d_" counter))
+                                        basename
+                                        (when extension
+                                          ".")
+                                        extension)
+                                       directory))
+               (or (> counter 10000)
+                   (file-exists-p temp-file-path)))
+        (setq counter (1+ counter)))
+      (unless (file-exists-p temp-file-path)
+        (write-region (point-min) (point-max) temp-file-path nil 'quiet)
+        temp-file-path))))
+
+(flymake-ansible-lint--quickdef-backend flymake-ansible-lint-backend
   :cleanup
   (progn
     (when (and tmp-path (not (string= buffer-path tmp-path)))
       (delete-file tmp-path nil)))
-  :pre-let ((ansible-lint-exec (executable-find
+
+  :pre-let ((buffer-path (buffer-file-name (buffer-base-buffer)))
+            (buffer-modified-p (current-buffer))
+            (tmp-path (when (and buffer-path
+                                 flymake-ansible-lint-tmp-files-enabled
+                                 buffer-modified-p)
+                        (flymake-ansible-lint--create-temp-file-same-dir
+                         buffer-path)))
+            (ansible-lint-exec (executable-find
                                 flymake-ansible-lint-executable))
-            (buffer-path flymake-ansible-lint--source-path)
-            (tmp-path flymake-ansible-lint--tmp-file)
             (file-path (or tmp-path buffer-path)))
+
   :pre-check
   (unless ansible-lint-exec
     (error "The '%s' executable was not found" ansible-lint-exec))
@@ -294,53 +324,6 @@ on values provided to the macro in DEFS, described below."
            (msg (format "%s: %s" code text)))
 
       (list fmqd-source beg end type msg))))
-
-(defun flymake-ansible-lint--create-temp-file-same-dir (file-path)
-  "Create a temporary file in the same directory as FILE-PATH.
-Returns the path of the created temporary file."
-  (when file-path
-    (let* ((directory (file-name-directory file-path))
-           (filename (file-name-nondirectory file-path))
-           (basename (file-name-sans-extension filename))
-           (extension (file-name-extension filename))
-           (counter 0)
-           (temp-file-name))
-      (while (progn
-               (setq temp-file-name (concat
-                                     flymake-ansible-lint-tmp-files-prefix
-                                     (if (> counter 0)
-                                         (format "%d_" counter))
-                                     basename
-                                     "."
-                                     extension))
-               (file-exists-p (expand-file-name temp-file-name directory)))
-        (setq counter (1+ counter)))
-      (expand-file-name temp-file-name directory))))
-
-(defun flymake-ansible-lint-backend (report-fn &rest args)
-  "Backend function for Flymake to handle Ansible linting.
-
-REPORT-FN is a callback function to report diagnostics.
-ARGS are additional arguments to pass to the linting function."
-  (let* ((source-path (buffer-file-name (buffer-base-buffer)))
-         (buffer-modified-p (current-buffer)))
-    (when source-path
-      ;; Copy the file and call the lint backend
-      (if (and flymake-ansible-lint-tmp-files-enabled
-               buffer-modified-p)
-          (progn
-            (let ((tmp-file (flymake-ansible-lint--create-temp-file-same-dir
-                             source-path)))
-              (when tmp-file
-                (write-region (point-min) (point-max) tmp-file nil 'quiet)
-                (let ((flymake-ansible-lint--tmp-file tmp-file)
-                      (flymake-ansible-lint--source-path (expand-file-name
-                                                          source-path)))
-                  (apply 'flymake-ansible--core-lint-backend report-fn args)))))
-        (let ((flymake-ansible-lint--tmp-file nil)
-              (flymake-ansible-lint--source-path
-               (expand-file-name source-path)))
-          (apply 'flymake-ansible--core-lint-backend report-fn args))))))
 
 ;;;###autoload
 (defun flymake-ansible-lint-setup ()
