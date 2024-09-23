@@ -48,7 +48,7 @@ This program is free software: you can redistribute it and/or modify it under th
 
 This issue is a known bug in `ansible-lint`, not in `flymake-ansible-lint`.
 
-It is `ansible-lint` that cuts off error messages:
+It is `ansible-lint` that truncates some error messages:
 ```
 $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
