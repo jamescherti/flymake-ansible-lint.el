@@ -44,15 +44,17 @@ This program is free software: you can redistribute it and/or modify it under th
 
 ## Frequently asked questions
 
-### Some messages are cut off
+### Why are some ansible-lint error messages truncated?
 
-This issue is a known bug in `ansible-lint`, not in `flymake-ansible-lint`. It is `ansible-lint` that cuts off error messages:
+This issue is a known bug in `ansible-lint`, not in `flymake-ansible-lint`.
+
+It is `ansible-lint` that cuts off error messages:
 ```
 $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
 ```
 
-In future versions of `flymake-ansible-lint`, the author plans to make it use `ansible-lint`'s JSON output. This change will allow parsing structures like:
+In future versions of `flymake-ansible-lint`, the author plans to utilize `ansible-lint`'s JSON output. This change will enable the parsing of structures like:
 ```
 $ ansible-lint test.yaml -f json
 [{"type": "issue", "check_name": "yaml[truthy]", "categories": ["formatting", "yaml"],
@@ -62,7 +64,7 @@ $ ansible-lint test.yaml -f json
 "location": {"path": "test.yaml", "lines": {"begin": 5}}}]
 ```
 
-The author will have to refactor the code to do this. Contributions are welcome.
+The author will need to refactor the code to implement this. Contributions are welcome.
 
 ## Links
 
