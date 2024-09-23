@@ -7,20 +7,14 @@ The `flymake-ansible-lint` Emacs package provides a Flymake backend for `ansible
 
 ## Installation
 
-### Installation using straight.el
+To install the `flymake-ansible-lint` from MELPA:
 
-To install the `flymake-ansible-lint` using `straight.el`:
+1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
-1. If you haven't already done so, [add the straight.el bootstrap code](https://github.com/radian-software/straight.el?tab=readme-ov-file#getting-started) to your init file.
-
-2. Add the following code to your Emacs init file:
+2. Add the following code to your Emacs init file to install `flymake-ansible-lint` from MELPA:
 ```emacs-lisp
 (use-package flymake-ansible-lint
   :ensure t
-  :straight (flymake-ansible-lint
-             :type git
-             :host github
-             :repo "jamescherti/flymake-ansible-lint.el")
   :commands flymake-ansible-lint-setup
   :hook (((yaml-ts-mode yaml-mode) . flymake-ansible-lint-setup)
          ((yaml-ts-mode yaml-mode) . flymake-mode)))
@@ -46,6 +40,7 @@ This program is free software: you can redistribute it and/or modify it under th
 ## Links
 
 - [flymake-ansible-lint.el @GitHub](https://github.com/jamescherti/flymake-ansible-lint.el)
+- [flymake-ansible-lint.el @MELPA](https://melpa.org/#/flymake-ansible-lint)
 - [ansible-lint @GitHub](https://github.com/ansible/ansible-lint)
 
 Other Emacs packages by the same author:
