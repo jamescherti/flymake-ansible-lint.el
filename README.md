@@ -6,6 +6,10 @@
 
 The `flymake-ansible-lint` Emacs package provides a Flymake backend for `ansible-lint`.
 
+## Requirements
+
+- [ansible-lint](https://github.com/ansible/ansible-lint) >= 6.0.0
+
 ## Installation
 
 To install the `flymake-ansible-lint` from MELPA:
@@ -37,6 +41,28 @@ The `flymake-ansible-lint` Emacs package has been written by [James Cherti](http
 Copyright (C) 2024 James Cherti
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program.
+
+## Frequently asked questions
+
+### Some messages are cut off
+
+This issue is a known bug in `ansible-lint`, not in `flymake-ansible-lint`. It is `ansible-lint` that cuts off error messages:
+```
+$ ansible-lint -p test.yaml
+test.yaml:5: yaml[truthy]: Truthy value should be one of
+```
+
+In future versions of `flymake-ansible-lint`, the author plans to make it use `ansible-lint`'s JSON output. This change will allow parsing structures like:
+```
+$ ansible-lint test.yaml -f json
+[{"type": "issue", "check_name": "yaml[truthy]", "categories": ["formatting", "yaml"],
+"url": "https://ansible-lint.readthedocs.io/rules/yaml/", "severity": "info",
+"level": "error", "description": "Truthy value should be one of \\[false, true]",
+"fingerprint": "******************************************",
+"location": {"path": "test.yaml", "lines": {"begin": 5}}}]
+```
+
+The author will have to refactor the code to do this. Contributions are welcome.
 
 ## Links
 
