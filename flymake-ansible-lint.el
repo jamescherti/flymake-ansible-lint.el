@@ -259,9 +259,7 @@ Returns the path of the newly created temporary file."
                    (file-exists-p temp-file-path)))
         (setq counter (1+ counter)))
       (unless (file-exists-p temp-file-path)
-        (save-restriction
-          (widen)
-          (write-region (point-min) (point-max) temp-file-path nil 'quiet))
+        (write-region (point-min) (point-max) temp-file-path nil 'quiet)
         temp-file-path))))
 
 (flymake-ansible-lint--quickdef-backend flymake-ansible-lint-backend
