@@ -8,7 +8,7 @@ The `flymake-ansible-lint` Emacs package provides a Flymake backend for `ansible
 
 ## Requirements
 
-- [ansible-lint](https://github.com/ansible/ansible-lint) >= 6.0.0
+- [ansible-lint](https://github.com/ansible/ansible-lint) >= 1.0.1
 
 ## Installation
 
