@@ -31,16 +31,16 @@
 ;; package, which allows any Emacs Flymake backend to function as a Flycheck
 ;; checker.)
 ;;
-;; Installation:
-;; -------------
+;; Installation from MELPA:
+;; ------------------------
 ;; (use-package flymake-ansible-lint
 ;;   :ensure t
 ;;   :commands flymake-ansible-lint-setup
 ;;   :hook (((yaml-ts-mode yaml-mode) . flymake-ansible-lint-setup)
 ;;          ((yaml-ts-mode yaml-mode) . flymake-mode)))
 ;;
-;; Customize:
-;; ----------
+;; Customizations:
+;; ---------------
 ;; You can configure ansible-lint parameters using the flymake-ansible-lint-args
 ;; variable:
 ;;   (setq flymake-ansible-lint-args '("--offline"
