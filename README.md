@@ -4,7 +4,9 @@
 ![License](https://img.shields.io/github/license/jamescherti/flymake-ansible-lint.el)
 ![](https://raw.githubusercontent.com/jamescherti/flymake-ansible-lint.el/main/.images/made-for-gnu-emacs.svg)
 
-The `flymake-ansible-lint` Emacs package provides a Flymake backend for `ansible-lint`.
+The `flymake-ansible-lint` package provides a Flymake backend for ansible-lint, enabling real-time syntax and style checking for Ansible playbooks and roles within Emacs.
+
+*(This package can also work with Flycheck: simply use the `flymake-flycheck` package, which allows any Emacs Flymake backend to function as a Flycheck checker.)*
 
 ## Requirements
 
