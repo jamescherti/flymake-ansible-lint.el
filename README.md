@@ -56,18 +56,6 @@ $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
 ```
 
-In future versions of `flymake-ansible-lint`, the author plans to utilize `ansible-lint`'s JSON output. This change will enable the parsing of structures like:
-```
-$ ansible-lint test.yaml -f json
-[{"type": "issue", "check_name": "yaml[truthy]", "categories": ["formatting", "yaml"],
-"url": "https://ansible-lint.readthedocs.io/rules/yaml/", "severity": "info",
-"level": "error", "description": "Truthy value should be one of \\[false, true]",
-"fingerprint": "******************************************",
-"location": {"path": "test.yaml", "lines": {"begin": 5}}}]
-```
-
-The author will need to refactor the code to implement this. Contributions are welcome.
-
 ## Links
 
 - [flymake-ansible-lint.el @GitHub](https://github.com/jamescherti/flymake-ansible-lint.el)
