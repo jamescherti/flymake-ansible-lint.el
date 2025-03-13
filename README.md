@@ -10,7 +10,7 @@ The `flymake-ansible-lint` package provides a Flymake backend for ansible-lint, 
 
 ## Requirements
 
-- [ansible-lint](https://github.com/ansible/ansible-lint) >= 1.0.1
+- [ansible-lint](https://github.com/ansible/ansible-lint) >= 1.0.2
 
 ## Installation
 
