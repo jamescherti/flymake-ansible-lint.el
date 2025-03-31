@@ -1,6 +1,7 @@
 # flymake-ansible-lint.el - A Flymake backend for ansible-lint
-[![MELPA](https://melpa.org/packages/flymake-ansible-lint-badge.svg)](https://melpa.org/#/flymake-ansible-lint)
 ![Build Status](https://github.com/jamescherti/flymake-ansible-lint.el/actions/workflows/ci.yml/badge.svg)
+[![MELPA](https://melpa.org/packages/flymake-ansible-lint-badge.svg)](https://melpa.org/#/flymake-ansible-lint)
+[![MELPA Stable](https://stable.melpa.org/packages/flymake-ansible-lint-badge.svg)](https://stable.melpa.org/#/flymake-ansible-lint)
 ![License](https://img.shields.io/github/license/jamescherti/flymake-ansible-lint.el)
 ![](https://raw.githubusercontent.com/jamescherti/flymake-ansible-lint.el/main/.images/made-for-gnu-emacs.svg)
 
