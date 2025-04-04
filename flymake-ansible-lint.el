@@ -310,7 +310,7 @@ Returns the path of the newly created temporary file."
 
   :pre-check
   (unless ansible-lint-exec
-    (error "The '%s' executable was not found" ansible-lint-exec))
+    (user-error "The '%s' executable was not found" ansible-lint-exec))
 
   :write-type nil
   :proc-form (append (list ansible-lint-exec
