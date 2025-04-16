@@ -310,7 +310,7 @@ Returns the path of the newly created temporary file."
 
   :pre-check
   (unless ansible-lint-exec
-    (user-error "The '%s' executable was not found" ansible-lint-exec))
+    (error "The '%s' executable was not found" ansible-lint-exec))
 
   :write-type nil
   :proc-form (append (list ansible-lint-exec
@@ -360,7 +360,11 @@ Returns the path of the newly created temporary file."
 This function adds `flymake-ansible-lint-backend' to the list of Flymake
 diagnostic functions, enabling Ansible-Lint style checks locally for the current
 buffer."
-  (add-hook 'flymake-diagnostic-functions #'flymake-ansible-lint-backend nil t))
+  (if (executable-find flymake-ansible-lint-executable)
+      (add-hook 'flymake-diagnostic-functions #'flymake-ansible-lint-backend nil t)
+    (message (concat "[flymake-ansible-lint] Not enabled because '%s' was not "
+                     "found in $PATH. Ensure it is installed and accessible.")
+             flymake-ansible-lint-executable)))
 
 (provide 'flymake-ansible-lint)
 ;;; flymake-ansible-lint.el ends here
