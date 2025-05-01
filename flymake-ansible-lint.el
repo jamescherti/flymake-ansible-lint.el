@@ -262,7 +262,9 @@ on values provided to the macro in DEFS, described below."
 (defun flymake-ansible-lint--create-temp-file-same-dir (file-path)
   "Create a temporary file in the same directory as FILE-PATH.
 Write the contents of the current buffer to the temporary file.
-Returns the path of the newly created temporary file."
+Returns the path of the newly created temporary file.
+Return nil when the temporary file cannot be created or directory does not
+exist."
   (when file-path
     (let* ((file-path (expand-file-name file-path))
            (directory (file-name-directory file-path))
@@ -270,25 +272,34 @@ Returns the path of the newly created temporary file."
            (basename (file-name-sans-extension filename))
            (extension (file-name-extension filename))
            (counter 0)
-           (temp-file-path))
-      (while (progn
-               (setq temp-file-path
-                     (expand-file-name (concat
-                                        flymake-ansible-lint-tmp-files-prefix
-                                        (if (> counter 0)
-                                            (format "%d_" counter))
-                                        basename
-                                        (when extension
-                                          ".")
-                                        extension)
-                                       directory))
-               (or (> counter 10000)
-                   (file-exists-p temp-file-path)))
-        (setq counter (1+ counter)))
-      (unless (file-exists-p temp-file-path)
-        (save-restriction
-          (widen)
-          (write-region (point-min) (point-max) temp-file-path nil 'quiet))
+           temp-file-path)
+      ;; Check if the directory exists, if not return nil
+      (when (file-directory-p directory)
+        ;; Try to generate a unique temporary file name
+        (while (progn
+                 (setq temp-file-path
+                       (expand-file-name (concat
+                                          flymake-ansible-lint-tmp-files-prefix
+                                          (if (> counter 0)
+                                              (format "%d_" counter))
+                                          basename
+                                          (when extension
+                                            ".")
+                                          extension)
+                                         directory))
+                 (or (> counter 10000)
+                     (file-exists-p temp-file-path)))
+          (setq counter (1+ counter)))
+
+        ;; If the file doesn't exist, try to create it
+        (unless (file-exists-p temp-file-path)
+          (save-restriction
+            (widen)
+            (condition-case _
+                (write-region (point-min) (point-max) temp-file-path nil 'quiet)
+              (error
+               ;; Return nil if the file cannot be written
+               (setq temp-file-path nil)))))
         temp-file-path))))
 
 (flymake-ansible-lint--quickdef-backend flymake-ansible-lint-backend
