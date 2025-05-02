@@ -292,11 +292,13 @@ exist."
           (setq counter (1+ counter)))
 
         ;; If the file doesn't exist, try to create it
-        (unless (file-exists-p temp-file-path)
+        (when (and temp-file-path (not (file-exists-p temp-file-path)))
           (save-restriction
             (widen)
             (condition-case _
-                (write-region (point-min) (point-max) temp-file-path nil 'quiet)
+                (let ((write-region-annotate-functions nil)
+                      (write-region-post-annotation-function nil))
+                  (write-region (point-min) (point-max) temp-file-path nil 'quiet))
               (error
                ;; Return nil if the file cannot be written
                (setq temp-file-path nil)))))
