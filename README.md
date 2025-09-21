@@ -3,7 +3,7 @@
 [![MELPA](https://melpa.org/packages/flymake-ansible-lint-badge.svg)](https://melpa.org/#/flymake-ansible-lint)
 [![MELPA Stable](https://stable.melpa.org/packages/flymake-ansible-lint-badge.svg)](https://stable.melpa.org/#/flymake-ansible-lint)
 ![License](https://img.shields.io/github/license/jamescherti/flymake-ansible-lint.el)
-![](https://raw.githubusercontent.com/jamescherti/flymake-ansible-lint.el/main/.images/made-for-gnu-emacs.svg)
+![](https://jamescherti.com/misc/made-for-gnu-emacs.svg)
 
 The `flymake-ansible-lint` package provides a Flymake backend for ansible-lint, enabling real-time syntax and style checking for Ansible playbooks and roles within Emacs.
 
