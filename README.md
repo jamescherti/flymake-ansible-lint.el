@@ -28,7 +28,7 @@ To install `flymake-ansible-lint` from MELPA:
          ((yaml-ts-mode yaml-mode) . flymake-mode)))
 ```
 
-## customize
+## Customizations
 
 You can configure `ansible-lint` parameters using the `flymake-ansible-lint-args` variable:
 
@@ -36,14 +36,6 @@ You can configure `ansible-lint` parameters using the `flymake-ansible-lint-args
 (setq flymake-ansible-lint-args '("--offline"
                                   "-x" "run-once[play],no-free-form"))
 ```
-
-## License
-
-The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version. This package uses flymake-quickdef, by Karl Otness.
-
-Copyright (C) 2024-2025 James Cherti
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program.
 
 ## Frequently asked questions
 
@@ -56,6 +48,14 @@ It is `ansible-lint` that truncates some error messages:
 $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
 ```
+
+## License
+
+The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version. This package uses *flymake-quickdef*, by Karl Otness.
+
+Copyright (C) 2024-2025 James Cherti
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program.
 
 ## Links
 
