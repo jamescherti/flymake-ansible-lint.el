@@ -34,7 +34,6 @@
 ;; Installation from MELPA:
 ;; ------------------------
 ;; (use-package flymake-ansible-lint
-;;   :ensure t
 ;;   :commands flymake-ansible-lint-setup
 ;;   :hook (((yaml-ts-mode yaml-mode) . flymake-ansible-lint-setup)
 ;;          ((yaml-ts-mode yaml-mode) . flymake-mode)))
@@ -131,6 +130,11 @@ When non-nil, `flymake-ansible-lint' will create a temporary file in the same
 directory as the original file, allowing for syntax checking to occur even when
 `flymake-no-changes-timeout' is active and the file has not been saved.
 Default value is t, enabling temporary file creation.")
+
+(defvar flymake-ansible-lint-after-lint-functions nil
+  "Functions to run after ansible-lint finishes.
+Each function is called with a single argument, the path of the file that was
+linted (not the temporary file).")
 
 (defvar-local flymake-ansible-lint--quickdef-procs nil
   "Internal variable used by `flymake-ansible-lint--quickdef-backend'.
@@ -252,7 +256,10 @@ on values provided to the macro in DEFS, described below."
                                    ;; Unwind-protect cleanup forms
                                    ,@cleanup-form
                                    ,custom-cleanup
-                                   (kill-buffer (process-buffer proc))))))))
+                                   (kill-buffer (process-buffer proc))
+                                   ;; TODO
+                                   ;; (run-hook-with-args 'flymake-ansible-lint-after-lint-functions buffer-path)
+                                   ))))))
            ;; If piping, send data to process
            ,@(when (eq write-type 'pipe)
                `((let ((proc (plist-get flymake-ansible-lint--quickdef-procs ',name)))
@@ -305,67 +312,68 @@ exist."
         temp-file-path))))
 
 (flymake-ansible-lint--quickdef-backend flymake-ansible-lint-backend
-  :cleanup
-  (progn
-    (when (and tmp-path (not (string= buffer-path tmp-path)))
-      (delete-file tmp-path nil)))
+                                        :cleanup
+                                        (progn
+                                          (when (and tmp-path (not (string= buffer-path tmp-path)))
+                                            (let ((delete-by-moving-to-trash nil))
+                                              (delete-file tmp-path nil))))
 
-  :pre-let ((buffer-path (buffer-file-name (buffer-base-buffer)))
-            (buffer-modified-p (current-buffer))
-            (tmp-path (when (and buffer-path
-                                 flymake-ansible-lint-tmp-files-enabled
-                                 buffer-modified-p)
-                        (flymake-ansible-lint--create-temp-file-same-dir
-                         buffer-path)))
-            (ansible-lint-exec (executable-find
-                                flymake-ansible-lint-executable))
-            (file-path (or tmp-path buffer-path)))
+                                        :pre-let ((buffer-path (buffer-file-name (buffer-base-buffer)))
+                                                  (buffer-modified-p (current-buffer))
+                                                  (tmp-path (when (and buffer-path
+                                                                       flymake-ansible-lint-tmp-files-enabled
+                                                                       buffer-modified-p)
+                                                              (flymake-ansible-lint--create-temp-file-same-dir
+                                                               buffer-path)))
+                                                  (ansible-lint-exec (executable-find
+                                                                      flymake-ansible-lint-executable))
+                                                  (file-path (or tmp-path buffer-path)))
 
-  :pre-check
-  (unless ansible-lint-exec
-    (error "The '%s' executable was not found" ansible-lint-exec))
+                                        :pre-check
+                                        (unless ansible-lint-exec
+                                          (error "The '%s' executable was not found" ansible-lint-exec))
 
-  :write-type nil
-  :proc-form (append (list ansible-lint-exec
-                           "--nocolor"
-                           "--parseable")
-                     (if flymake-ansible-lint-args
-                         (append flymake-ansible-lint-args
-                                 (list file-path))
-                       (list file-path)))
-  :search-regexp
-  (rx bol
-      ;; file.yaml:57:7: syntax-check[specific]: message
-      ;; file.yaml:1: internal-error: Unexpected error code 1
-      (seq (zero-or-more any)
-           (literal (file-name-nondirectory file-path)) ":" ; File name
-           ;; Line/Column
-           (group (one-or-more digit)) ":" ; Line number
-           (optional (group (one-or-more digit) ":")) ; Optional column
-           ;; Code
-           (one-or-more space)
-           (group (one-or-more (not ":")))  ":" ; Code
-           ;; Message
-           (one-or-more space)
-           (group (one-or-more any))) ; Msg
-      eol)
+                                        :write-type nil
+                                        :proc-form (append (list ansible-lint-exec
+                                                                 "--nocolor"
+                                                                 "--parseable")
+                                                           (if flymake-ansible-lint-args
+                                                               (append flymake-ansible-lint-args
+                                                                       (list file-path))
+                                                             (list file-path)))
+                                        :search-regexp
+                                        (rx bol
+                                            ;; file.yaml:57:7: syntax-check[specific]: message
+                                            ;; file.yaml:1: internal-error: Unexpected error code 1
+                                            (seq (zero-or-more any)
+                                                 (literal (file-name-nondirectory file-path)) ":" ; File name
+                                                 ;; Line/Column
+                                                 (group (one-or-more digit)) ":" ; Line number
+                                                 (optional (group (one-or-more digit) ":")) ; Optional column
+                                                 ;; Code
+                                                 (one-or-more space)
+                                                 (group (one-or-more (not ":")))  ":" ; Code
+                                                 ;; Message
+                                                 (one-or-more space)
+                                                 (group (one-or-more any))) ; Msg
+                                            eol)
 
-  :prep-diagnostic
-  (progn
-    (let* ((lnum (string-to-number (match-string 1)))
-           (col (let ((col-string (match-string 2)))
-                  (if col-string
-                      (string-to-number col-string)
-                    nil)))
-           (code (match-string 3))
-           (text (match-string 4))
-           (pos (flymake-diag-region fmqd-source lnum col))
-           (beg (car pos))
-           (end (cdr pos))
-           (type :error)
-           (msg (format "%s: %s" code text)))
+                                        :prep-diagnostic
+                                        (progn
+                                          (let* ((lnum (string-to-number (match-string 1)))
+                                                 (col (let ((col-string (match-string 2)))
+                                                        (if col-string
+                                                            (string-to-number col-string)
+                                                          nil)))
+                                                 (code (match-string 3))
+                                                 (text (match-string 4))
+                                                 (pos (flymake-diag-region fmqd-source lnum col))
+                                                 (beg (car pos))
+                                                 (end (cdr pos))
+                                                 (type :error)
+                                                 (msg (format "%s: %s" code text)))
 
-      (list fmqd-source beg end type msg))))
+                                            (list fmqd-source beg end type msg))))
 
 ;;;###autoload
 (defun flymake-ansible-lint-setup ()
