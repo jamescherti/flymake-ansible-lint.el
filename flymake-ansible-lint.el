@@ -132,6 +132,11 @@ directory as the original file, allowing for syntax checking to occur even when
 `flymake-no-changes-timeout' is active and the file has not been saved.
 Default value is t, enabling temporary file creation.")
 
+(defvar flymake-ansible-lint-after-lint-functions nil
+  "Functions to run after ansible-lint finishes.
+Each function is called with a single argument, the path of the file that was
+linted (not the temporary file).")
+
 (defvar-local flymake-ansible-lint--quickdef-procs nil
   "Internal variable used by `flymake-ansible-lint--quickdef-backend'.
 Do not edit its value.  This variable holds a plist used to store
@@ -252,7 +257,10 @@ on values provided to the macro in DEFS, described below."
                                    ;; Unwind-protect cleanup forms
                                    ,@cleanup-form
                                    ,custom-cleanup
-                                   (kill-buffer (process-buffer proc))))))))
+                                   (kill-buffer (process-buffer proc))
+                                   ;; TODO
+                                   ;; (run-hook-with-args 'flymake-ansible-lint-after-lint-functions buffer-path)
+                                   ))))))
            ;; If piping, send data to process
            ,@(when (eq write-type 'pipe)
                `((let ((proc (plist-get flymake-ansible-lint--quickdef-procs ',name)))
