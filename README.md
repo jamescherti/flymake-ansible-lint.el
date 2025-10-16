@@ -49,6 +49,16 @@ $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
 ```
 
+### Where does the package create temporary files?
+
+By default, the *flymake-ansible-lint* package creates temporary files in the same directory as the Ansible YAML file currently being edited.
+
+For example, when editing: `/home/user/test/myfile.yaml`, the package may generate temporary files such as: `/home/user/test/flymake_1_myfile.yaml` `/home/user/test/flymake_2_myfile.yaml`...
+
+**These temporary files are automatically removed once flymake-ansible-lint completes its analysis.**
+
+(This behavior is controlled by the variable `flymake-ansible-lint-tmp-files-enabled`. Keeping `flymake-ansible-lint-tmp-files-enabled` enabled is important because it allows Flymake to lint the most recent in-memory state of the buffer, including unsaved modifications. Without these temporary files, Flymake would have to rely on the last saved version of the file, which might not reflect the current edits. This ensures that linting diagnostics remain accurate, up to date, and synchronized with the actual buffer contents, providing immediate feedback while editing.)
+
 ## License
 
 The `flymake-ansible-lint` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version. This package uses *flymake-quickdef*, by Karl Otness.
