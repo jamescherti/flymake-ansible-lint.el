@@ -49,7 +49,7 @@ $ ansible-lint -p test.yaml
 test.yaml:5: yaml[truthy]: Truthy value should be one of
 ```
 
-### Where does the package create temporary files?
+### Location of the temporary files created by the flymake-ansible-lint package
 
 By default, the *flymake-ansible-lint* package creates temporary files in the same directory as the Ansible YAML file currently being edited.
 
