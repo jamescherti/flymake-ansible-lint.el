@@ -6,7 +6,7 @@
 ;; Version: 1.0.4
 ;; URL: https://github.com/jamescherti/flymake-ansible-lint.el
 ;; Keywords: tools
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "27.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -337,17 +337,20 @@ exist."
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
       ;; file.yaml:1: internal-error: Unexpected error code 1
-      (seq (zero-or-more any)
-           (literal (file-name-nondirectory file-path)) ":" ; File name
-           ;; Line/Column
-           (group (one-or-more digit)) ":" ; Line number
-           (optional (group (one-or-more digit) ":")) ; Optional column
-           ;; Code
-           (one-or-more space)
-           (group (one-or-more (not ":")))  ":" ; Code
-           ;; Message
-           (one-or-more space)
-           (group (one-or-more any))) ; Msg
+      (zero-or-more any)
+      (seq
+       ;; File name
+       (literal (file-name-nondirectory file-path)) ":" ; File name
+       ;; (concat (regexp-quote (file-name-nondirectory file-path)) ":")
+       ;; Line/Column
+       (group (one-or-more digit)) ":" ; Line number
+       (optional (group (one-or-more digit) ":")) ; Optional column
+       ;; Code
+       (one-or-more space)
+       (group (one-or-more (not (any ":"))))  ":" ; Code
+       ;; Message
+       (one-or-more space)
+       (group (one-or-more any))) ; Msg
       eol)
 
   :prep-diagnostic
