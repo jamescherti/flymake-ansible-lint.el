@@ -337,20 +337,17 @@ exist."
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
       ;; file.yaml:1: internal-error: Unexpected error code 1
-      (zero-or-more any)
-      (seq
-       ;; File name
-       (literal (file-name-nondirectory file-path)) ":" ; File name
-       ;; (concat (regexp-quote (file-name-nondirectory file-path)) ":")
-       ;; Line/Column
-       (group (one-or-more digit)) ":" ; Line number
-       (optional (group (one-or-more digit) ":")) ; Optional column
-       ;; Code
-       (one-or-more space)
-       (group (one-or-more (not (any ":"))))  ":" ; Code
-       ;; Message
-       (one-or-more space)
-       (group (one-or-more any))) ; Msg
+      (seq (zero-or-more any)
+           (literal (file-name-nondirectory file-path)) ":" ; File name
+           ;; Line/Column
+           (group (one-or-more digit)) ":" ; Line number
+           (optional (group (one-or-more digit) ":")) ; Optional column
+           ;; Code
+           (one-or-more space)
+           (group (one-or-more (not ":")))  ":" ; Code
+           ;; Message
+           (one-or-more space)
+           (group (one-or-more any))) ; Msg
       eol)
 
   :prep-diagnostic
