@@ -3,7 +3,7 @@
 ;; Copyright (C) 2024-2025 James Cherti | https://www.jamescherti.com/contact/
 
 ;; Author: James Cherti
-;; Version: 1.0.4
+;; Version: 1.0.5
 ;; URL: https://github.com/jamescherti/flymake-ansible-lint.el
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "27.1"))

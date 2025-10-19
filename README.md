@@ -11,7 +11,7 @@ The [flymake-ansible-lint](https://github.com/jamescherti/flymake-ansible-lint.e
 
 ## Requirements
 
-- [ansible-lint](https://github.com/ansible/ansible-lint) >= 1.0.4
+- [ansible-lint](https://github.com/ansible/ansible-lint) >= 1.0.5
 
 ## Installation
 
