@@ -22,7 +22,6 @@ To install `flymake-ansible-lint` from MELPA:
 2. Add the following code to your Emacs init file to install `flymake-ansible-lint` from MELPA:
 ```emacs-lisp
 (use-package flymake-ansible-lint
-  :ensure t
   :commands flymake-ansible-lint-setup
   :hook (((yaml-ts-mode yaml-mode) . flymake-ansible-lint-setup)
          ((yaml-ts-mode yaml-mode) . flymake-mode)))
