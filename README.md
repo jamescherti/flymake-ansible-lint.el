@@ -33,8 +33,17 @@ You can configure `ansible-lint` parameters using the `flymake-ansible-lint-args
 
 ```emacs-lisp
 (setq flymake-ansible-lint-args '("--offline"
-                                  "-x" "run-once[play],no-free-form"))
+                                  "-x"
+                                  "run-once[play],no-free-form"))
 ```
+
+You can also enable automatic project directory detection to pass the `--project-dir` argument to the linter automatically. This feature detects the project or version control root and uses it as the project directory:
+
+```emacs-lisp
+(setq flymake-ansible-lint-auto-project-dir t)
+```
+
+This ensures that Ansible caches its data inside a single `.ansible` directory at the project root, rather than cluttering your repository by creating an `.ansible` folder in every subdirectory where a file is linted, keeping your project tree clean.
 
 ## Frequently asked questions
 

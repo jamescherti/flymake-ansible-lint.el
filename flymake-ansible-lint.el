@@ -119,6 +119,14 @@ directories listed in the $PATH environment variable."
   :type 'string
   :group 'flymake-ansible-lint)
 
+(defcustom flymake-ansible-lint-auto-project-dir nil
+  "Control whether to automatically pass the project directory to ansible-lint.
+When non-nil, the backend will attempt to detect the project or VC root and
+append the `--project-dir' argument to the command. When nil, it behaves exactly
+as if the feature is disabled."
+  :type 'boolean
+  :group 'flymake-ansible-lint)
+
 (defvar flymake-ansible-lint-tmp-files-prefix "flymake_"
   "Prefix used for temporary files created by Flymake Ansible.
 This prefix is used to identify temporary files created by Flymake Ansible
@@ -313,6 +321,28 @@ exist."
                (setq temp-file-path nil)))))
         temp-file-path))))
 
+(defun flymake-ansible-lint--get-project-dir-args ()
+  "Return the `--project-dir' argument if enabled and a project root is found."
+  (when flymake-ansible-lint-auto-project-dir
+    (let (root-dir)
+      (when (and (not root-dir)
+                 (fboundp 'projectile-project-root))
+        (setq root-dir (ignore-errors (projectile-project-root))))
+
+      (when (and (not root-dir)
+                 (fboundp 'project-current)
+                 (fboundp 'project-root))
+        (let ((project-object (project-current nil)))
+          (when project-object
+            (setq root-dir (project-root project-object)))))
+
+      (when (and (not root-dir)
+                 (fboundp 'vc-root-dir))
+        (setq root-dir (ignore-errors (vc-root-dir))))
+
+      (when root-dir
+        (list "--project-dir" (expand-file-name root-dir))))))
+
 (flymake-ansible-lint--quickdef-backend flymake-ansible-lint-backend
   :cleanup
   (progn
@@ -339,10 +369,9 @@ exist."
   :proc-form (append (list ansible-lint-exec
                            "--nocolor"
                            "--parseable")
-                     (if flymake-ansible-lint-args
-                         (append flymake-ansible-lint-args
-                                 (list file-path))
-                       (list file-path)))
+                     (flymake-ansible-lint--get-project-dir-args)
+                     flymake-ansible-lint-args
+                     (list file-path))
   :search-regexp
   (rx bol
       ;; file.yaml:57:7: syntax-check[specific]: message
