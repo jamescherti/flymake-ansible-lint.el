@@ -5,6 +5,9 @@
 ![License](https://img.shields.io/github/license/jamescherti/flymake-ansible-lint.el)
 ![](https://jamescherti.com/misc/made-for-gnu-emacs.svg)
 
+- Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
+- License: GPL
+
 The [flymake-ansible-lint](https://github.com/jamescherti/flymake-ansible-lint.el) package provides a Flymake backend for ansible-lint, enabling real-time syntax and style checking for Ansible playbooks and roles within Emacs.
 
 *(This package can also work with Flycheck: simply use the `flymake-flycheck` package, which allows any Emacs Flymake backend to function as a Flycheck checker.)*
